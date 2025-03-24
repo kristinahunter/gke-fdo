@@ -12,9 +12,11 @@
 4. Terminal
 	gcloud auth application-default login
 	gcloud components install gke-gcloud-auth-plugin + path stuff if needed
+	install helm if not installed
 	terraform init
 	terraform plan
 	terraform apply
+	
 
 6. deploy-tfe.sh
 
