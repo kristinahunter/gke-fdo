@@ -1,11 +1,13 @@
 1. Doormat
-	request temp GCP account
+	
+ 	request temp GCP account
 
 	acccount ID for DNS (can use the other if you chose wrong, but requires a change
 
 	can take about 10 minutes
 
 3. Variables.tf
+
 	update project ID
 
 	update zone
@@ -15,6 +17,7 @@
 	All other defaults should work
 
 4. Terminal
+
 	gcloud auth application-default login
 
 	gcloud components install gke-gcloud-auth-plugin + path stuff if needed
@@ -28,9 +31,9 @@
 	terraform apply
 	
 
-6. deploy-tfe.sh
+5. deploy-tfe.sh
 
-7. validate-tfe.sh
+6. validate-tfe.sh
 
 Troubleshooting
 
