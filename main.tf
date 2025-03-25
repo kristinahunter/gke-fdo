@@ -37,6 +37,10 @@ resource "google_compute_network" "vpc" {
   auto_create_subnetworks = false
   
   depends_on = [google_project_service.required_apis]
+
+  lifecycle {
+    create_before_destroy = true
+  }
 }
 # Subnet for GKE
 resource "google_compute_subnetwork" "subnet" {
@@ -48,6 +52,7 @@ resource "google_compute_subnetwork" "subnet" {
   private_ip_google_access = true
 
   lifecycle {
+    create_before_destroy = true
     ignore_changes = [
       secondary_ip_range,
     ]
@@ -58,6 +63,10 @@ resource "google_compute_router" "router" {
   name    = "gke-nat-router"
   region  = var.region
   network = google_compute_network.vpc.name
+
+  lifecycle {
+    create_before_destroy = true
+  }
 }
 # NAT Gateway
 resource "google_compute_router_nat" "nat" {
@@ -69,6 +78,10 @@ resource "google_compute_router_nat" "nat" {
   log_config {
     enable = true
     filter = "ERRORS_ONLY"
+  }
+
+  lifecycle {
+    create_before_destroy = true
   }
 }
 
@@ -124,16 +137,18 @@ resource "google_compute_global_address" "private_ip_address" {
   address       = "10.77.0.0"
   
   depends_on = [google_project_service.required_apis]
+
+  lifecycle {
+    create_before_destroy = true
+  }
 }
 resource "google_service_networking_connection" "private_vpc_connection" {
   network                 = google_compute_network.vpc.self_link
   service                 = "servicenetworking.googleapis.com"
   reserved_peering_ranges = [google_compute_global_address.private_ip_address.name]
   
-  # Add explicit dependency on services
   depends_on = [google_project_service.required_apis]
   
-  # Add lifecycle to ensure proper destroy order
   lifecycle {
     create_before_destroy = true
   }
@@ -330,7 +345,15 @@ output "postgres_password" {
   sensitive = true
 }
 
+output "certificate_email" {
+  value = var.certificate_email
+}
+
 output "tfe_bucket_credentials" {
   value     = google_service_account_key.tfe_bucket_user_key.private_key
   sensitive = true
+}
+
+output "tfe_version" {
+  value = var.tfe_version
 }

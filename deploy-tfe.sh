@@ -14,6 +14,8 @@ TFE_LICENSE=$(terraform output -raw tfe_license)
 POSTGRES_USERNAME=$(terraform output -raw postgres_username)
 POSTGRES_PASSWORD=$(terraform output -raw postgres_password)
 TFE_BUCKET_CREDENTIALS=$(terraform output -raw tfe_bucket_credentials_json)
+CERTIFICATE_EMAIL=$(terraform output -raw certificate_email)
+TFE_VERSION=$(terraform output -raw tfe_version)
 
 # Get the domain parts from TFE_HOSTNAME
 DNS_HOSTNAME=$(echo $TFE_HOSTNAME | cut -d. -f1)
@@ -49,11 +51,16 @@ variable "dns_zonename" {
 
 variable "certificate_email" {
   description = "email address to register the certificate"
-  default     = "kristina.hunter@hashicorp.com"
+  default     = "${CERTIFICATE_EMAIL}"
 }
 
 provider "acme" {
-  server_url = "https://acme-staging-v02.api.letsencrypt.org/directory"
+  # Use staging for testing (no rate limits, faster issuance)
+  # server_url = "https://acme-staging-v02.api.letsencrypt.org/directory"
+  
+  # Use production for real deployments (has rate limits, trusted by browsers)
+  # IMPORTANT: Production has strict rate limits. Use staging for testing first!
+  server_url = "https://acme-v02.api.letsencrypt.org/directory"
 }
 
 # SSL certificates
@@ -136,7 +143,7 @@ env:
 image:
   name: hashicorp/terraform-enterprise
   repository: images.releases.hashicorp.com
-  tag: v202501-1
+  tag: "$TFE_VERSION"
   pullSecrets:
     - name: terraform-enterprise
 tls:
