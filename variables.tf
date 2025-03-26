@@ -63,6 +63,12 @@ variable "certificate_email" {
   default     = "CHANGEME"
 }
 
+variable "tfe_version" {
+  description = "TFE version to install"
+  type        = string
+  default     = "v202503-1"
+}
+
 locals {
   # Resource naming
   cluster_name = "tfe-cluster-${var.environment}"
