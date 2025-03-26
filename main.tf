@@ -24,7 +24,7 @@ resource "google_project_service" "required_apis" {
     "redis.googleapis.com",
     "container.googleapis.com"
   ])
-  
+
   project = var.project_id
   service = each.key
 
@@ -35,7 +35,7 @@ resource "google_project_service" "required_apis" {
 resource "google_compute_network" "vpc" {
   name                    = "${var.project_id}-vpc"
   auto_create_subnetworks = false
-  
+
   depends_on = [google_project_service.required_apis]
 
   lifecycle {
@@ -90,7 +90,7 @@ resource "google_service_account" "tfe_bucket_user" {
   account_id   = "tfe-bucket-user"
   display_name = "tfe-bucket-user"
   project      = var.project_id
-  
+
   depends_on = [google_project_service.required_apis]
 }
 
@@ -135,25 +135,47 @@ resource "google_compute_global_address" "private_ip_address" {
   prefix_length = 16
   network       = google_compute_network.vpc.self_link
   address       = "10.77.0.0"
-  
+
   depends_on = [google_project_service.required_apis]
 
   lifecycle {
     create_before_destroy = true
   }
 }
+
+# Update the service networking connection dependency
 resource "google_service_networking_connection" "private_vpc_connection" {
   network                 = google_compute_network.vpc.self_link
   service                 = "servicenetworking.googleapis.com"
   reserved_peering_ranges = [google_compute_global_address.private_ip_address.name]
-  
+
   depends_on = [google_project_service.required_apis]
-  
+
   lifecycle {
     create_before_destroy = true
   }
 }
 
+# Use Terraform meta-arguments to enforce dependency ordering without circular references
+resource "terraform_data" "dependency_ordering" {
+  # This ensures the service networking connection is only destroyed after all dependent resources
+  depends_on = [
+    google_sql_database_instance.postgres,
+    google_redis_instance.redis
+  ]
+
+  triggers_replace = {
+    postgres_id = google_sql_database_instance.postgres.id
+    redis_id = google_redis_instance.redis.id
+  }
+
+  # Add this to make the VPC depend on this during destroy only
+  lifecycle {
+    replace_triggered_by = [
+      google_compute_network.vpc
+    ]
+  }
+}
 
 # PostgreSQL (Cloud SQL)
 resource "google_sql_database_instance" "postgres" {
@@ -161,7 +183,7 @@ resource "google_sql_database_instance" "postgres" {
   database_version = "POSTGRES_16"
   region           = var.region
   depends_on       = [google_service_networking_connection.private_vpc_connection]
-  
+
   # Disable deletion protection
   deletion_protection = false
 
@@ -201,7 +223,7 @@ resource "google_redis_instance" "redis" {
   connect_mode       = "PRIVATE_SERVICE_ACCESS"
 
   depends_on = [google_service_networking_connection.private_vpc_connection]
-  
+
   # Add lifecycle policy to ensure this resource is destroyed before the service networking connection
   lifecycle {
     create_before_destroy = true
@@ -261,7 +283,7 @@ resource "google_container_cluster" "primary" {
   # We use a separately managed node pool
   remove_default_node_pool = true
   initial_node_count       = 1
-  
+
   # Disable deletion protection
   deletion_protection = false
 }

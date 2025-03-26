@@ -50,16 +50,10 @@ Edit `variables.tf` with the following information:
 - Project ID: Your GCP project identifier
 - Zone: The GCP zone where resources will be deployed
 - License: Your Terraform Enterprise license
+- Version: Your desired TFE version
 - Certificate Configuration:
   - Certificate Email: Email address for Let's Encrypt notifications
   - Certificate Environment:
-    ```hcl
-    # For staging (testing)
-    acme_server_url = "https://acme-staging-v02.api.letsencrypt.org/directory"
-    
-    # For production (real deployments)
-    acme_server_url = "https://acme-v02.api.letsencrypt.org/directory"
-    ```
   - Note: Staging certificates are not trusted by browsers but have no rate limits
 - Other variables can remain at default values
 
